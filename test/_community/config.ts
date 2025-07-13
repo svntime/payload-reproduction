@@ -1,3 +1,4 @@
+import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { fileURLToPath } from 'node:url'
 import path from 'path'
@@ -5,7 +6,7 @@ import path from 'path'
 import { buildConfigWithDefaults } from '../buildConfigWithDefaults.js'
 import { devUser } from '../credentials.js'
 import { MediaCollection } from './collections/Media/index.js'
-import { PostsCollection, postsSlug } from './collections/Posts/index.js'
+import { PostsCollection, postsSlug, postStatusOptions } from './collections/Posts/index.js'
 import { MenuGlobal } from './globals/Menu/index.js'
 
 const filename = fileURLToPath(import.meta.url)
@@ -19,6 +20,11 @@ export default buildConfigWithDefaults({
       baseDir: path.resolve(dirname),
     },
   },
+  db: postgresAdapter({
+    pool: {
+      connectionString: 'postgresql://postgres:postgres@localhost:5432/payload-reproduction',
+    },
+  }),
   editor: lexicalEditor({}),
   globals: [
     // ...add more globals here
@@ -33,12 +39,19 @@ export default buildConfigWithDefaults({
       },
     })
 
-    await payload.create({
-      collection: postsSlug,
-      data: {
-        title: 'example post',
-      },
-    })
+    const posts = [...Array(50).keys()].map((index) => ({
+      title: `Post ${index + 1}`,
+      status: postStatusOptions.new.value,
+    }))
+
+    await Promise.all(
+      posts.map((post) =>
+        payload.create({
+          collection: postsSlug,
+          data: post,
+        }),
+      ),
+    )
   },
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),

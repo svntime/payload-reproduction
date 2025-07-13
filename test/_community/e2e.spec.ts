@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { postStatusOptions } from '_community/collections/Posts/index.js'
 import * as path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -28,10 +29,35 @@ test.describe('Community', () => {
     await ensureCompilationIsDone({ page, serverURL })
   })
 
-  test('example test', async () => {
+  test('all selected rows are updated with bulk update', async () => {
     await page.goto(url.list)
 
-    const textCell = page.locator('.row-1 .cell-title')
-    await expect(textCell).toHaveText('example post')
+    await page.getByRole('row', { name: 'Post 50' }).getByRole('checkbox').click()
+    await page.getByRole('row', { name: 'Post 49' }).getByRole('checkbox').click()
+    await page.getByRole('textbox').fill('Post 21')
+    await page.getByRole('row', { name: 'Post 21' }).getByRole('checkbox').click()
+
+    // Confirm selection summary
+    await expect(page.getByText('selected')).toHaveText('3 selected')
+
+    // Bulk update flow
+    await page.getByRole('button', { name: 'Edit' }).click()
+    await page
+      .locator('div')
+      .filter({ hasText: /^Select a value$/ })
+      .nth(1)
+      .click()
+    await page.getByRole('option', { name: 'Status' }).click()
+    await page
+      .locator('div')
+      .filter({ hasText: /^Select a value$/ })
+      .nth(1)
+      .click()
+    await page.getByRole('option', { name: postStatusOptions.important.value }).click()
+    await page.getByRole('button', { name: 'Save', exact: true }).click()
+
+    // this will fail, because Payload includes search query param in PATCH request
+    // where[and][0][or][0][title][like] = post 21
+    await expect(page.locator('text=Updated 3 Posts successfully.')).toBeVisible()
   })
 })

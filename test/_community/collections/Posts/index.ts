@@ -4,6 +4,21 @@ import { lexicalEditor } from '@payloadcms/richtext-lexical'
 
 export const postsSlug = 'posts'
 
+export const postStatusOptions = {
+  new: {
+    label: 'New',
+    value: 'new',
+  },
+  important: {
+    label: 'Important',
+    value: 'important',
+  },
+  optional: {
+    label: 'Optional',
+    value: 'optional',
+  },
+}
+
 export const PostsCollection: CollectionConfig = {
   slug: postsSlug,
   admin: {
@@ -13,6 +28,12 @@ export const PostsCollection: CollectionConfig = {
     {
       name: 'title',
       type: 'text',
+    },
+    {
+      name: 'status',
+      type: 'select',
+      options: Object.values(postStatusOptions),
+      required: true,
     },
     {
       name: 'content',
